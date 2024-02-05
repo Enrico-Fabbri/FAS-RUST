@@ -2,14 +2,14 @@
 
 pub mod animeunity;
 pub mod animeworld;
+pub mod aniplay;
 
 /// Enumeration of different anime streaming sites.
 #[derive(Debug)]
 pub enum Sites {
     AnimeWorld,
     AnimeUnity,
-    AnimeSaturn,
-    AnimeItaly,
+    AniPlay,
 }
 
 /// Struct representing an anime.

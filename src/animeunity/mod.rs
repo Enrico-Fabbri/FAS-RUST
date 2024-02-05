@@ -162,35 +162,37 @@ pub async fn get_anime_episodes(
                                             .collect::<Vec<&str>>()[0];
 
                                         // Parse the JSON data into a serde_json::Value.
-                                        let json: serde_json::Value =
-                                            serde_json::from_str(json_str).unwrap();
+                                        if let Ok(json) =
+                                            serde_json::from_str::<serde_json::Value>(json_str)
+                                        {
+                                            // Extract episodes from the JSON data.
+                                            if let Some(json_pre) = json.get("episodes") {
+                                                if let Some(json_array) = json_pre.as_array() {
+                                                    // Iterate over each episode JSON object.
+                                                    for json_obj in json_array {
+                                                        // Extract episode number and ID.
+                                                        let number = json_obj
+                                                            .get("number")
+                                                            .and_then(|v| v.as_str())
+                                                            .and_then(|s| s.parse::<usize>().ok())
+                                                            .unwrap_or(0);
 
-                                        // Extract episodes from the JSON data.
-                                        if let Some(json_pre) = json.get("episodes") {
-                                            if let Some(json_array) = json_pre.as_array() {
-                                                // Iterate over each episode JSON object.
-                                                for json_obj in json_array {
-                                                    // Extract episode number and ID.
-                                                    let number = json_obj
-                                                        .get("number")
-                                                        .and_then(|v| v.as_str())
-                                                        .and_then(|s| s.parse::<usize>().ok())
-                                                        .unwrap_or(0);
+                                                        let episode_id = json_obj
+                                                            .get("id")
+                                                            .and_then(|v| v.as_u64())
+                                                            .map(|id| id.to_string())
+                                                            .unwrap_or_default();
 
-                                                    let episode_id = json_obj
-                                                        .get("id")
-                                                        .and_then(|v| v.as_u64())
-                                                        .map(|id| id.to_string())
-                                                        .unwrap_or_default();
-
-                                                    // Check if the episode number is within the specified range.
-                                                    if range
-                                                        .as_ref()
-                                                        .map_or(true, |r| r.contains(&number))
-                                                    {
-                                                        // Create a new Episode instance and add it to the vector.
-                                                        episodes
-                                                            .push(Episode::new(number, episode_id));
+                                                        // Check if the episode number is within the specified range.
+                                                        if range
+                                                            .as_ref()
+                                                            .map_or(true, |r| r.contains(&number))
+                                                        {
+                                                            // Create a new Episode instance and add it to the vector.
+                                                            episodes.push(Episode::new(
+                                                                number, episode_id,
+                                                            ));
+                                                        }
                                                     }
                                                 }
                                             }
