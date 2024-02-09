@@ -3,7 +3,7 @@ name: Update Docs
 on:
     push:
         branches:
-            - master # Adjust branch name as needed
+            - main # Adjust branch name as needed
 
 jobs:
     update_docs:
@@ -19,7 +19,7 @@ jobs:
             - name: Clone Wiki Repository
               uses: actions/checkout@v2
               with:
-                  repository: Enrico-Fabbri/FAS-RUST
+                  repository: Enrico-Fabbri/FAS-RUST.wiki
                   path: wiki
 
             - name: Copy Documentation to Wiki
@@ -28,8 +28,8 @@ jobs:
             - name: Commit and Push Changes
               working-directory: wiki
               run: |
-                  git config --local user.email "action@github.com"
-                  git config --local user.name "GitHub Action"
+                  git config user.email "actions@github.com"
+                  git config user.name "GitHub Actions"
                   git add .
                   git commit -m "Update documentation"
-                  git push https://${{ secrets.GH_TOKEN }}@github.com/Enrico-Fabbri/FAS-RUST/wiki
+                  git push https://$GITHUB_TOKEN@github.com/Enrico-Fabbri/FAS-RUST.wiki.git HEAD:main
