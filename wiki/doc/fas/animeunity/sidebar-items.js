@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["LINK"],"fn":["get_anime_episodes","get_episodes_link","search"]};

@@ -2,6 +2,3 @@
 /Cargo.lock
 tests/
 tests/mod.rs
-/wiki/debug
-/wiki/.rustc_info.json
-/wiki/.rustdoc_fingerprint.json
