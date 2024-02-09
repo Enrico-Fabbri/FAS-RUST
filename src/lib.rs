@@ -1,5 +1,3 @@
-// TODO: add original title as to search in my anime list
-
 pub mod animeunity;
 pub mod animeworld;
 pub mod aniplay;
