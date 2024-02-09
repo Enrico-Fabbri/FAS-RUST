@@ -32,4 +32,4 @@ jobs:
                   git config --local user.name "GitHub Action"
                   git add .
                   git commit -m "Update documentation"
-                  git push https://${{ secrets.GH_TOKEN }}@github.com/Enrico-Fabbri/FAS-RUST
+                  git push https://${{ secrets.GH_TOKEN }}@github.com/Enrico-Fabbri/FAS-RUST/wiki
