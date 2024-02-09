@@ -5,14 +5,14 @@ const LINK: &str = "https://www.animeunity.to";
 
 /// Asynchronously searches for anime titles matching the provided keywords on AnimeUnity.
 ///
-/// This function takes a reference to a reqwest [`Client`] and a string of keywords to search for.
+/// This function takes a reference to a [`reqwest::Client`] and a string of keywords to search for.
 /// It sends a GET request to AnimeUnity's search endpoint with the provided keywords, extracts
 /// relevant information from the HTML response, and returns a vector of [`Anime`] objects containing
 /// titles and links of the matching anime.
 ///
 /// # Arguments
 ///
-/// * `client` - A reference to a reqwest [`Client`] used to make HTTP requests.
+/// * `client` - A reference to a [`reqwest::Client`] used to make HTTP requests.
 /// * `keywords` - A string containing the keywords to search for anime titles.
 ///
 /// # Returns
@@ -34,50 +34,134 @@ pub async fn search(client: &reqwest::Client, keywords: &str) -> Vec<Anime> {
     let url = format!("{}/archivio?title={}", animeunity::LINK, keywords);
 
     // Send a GET request to the URL and handle the response.
-    if let Ok(resp) = client.get(&url).send().await {
-        // If the response is successful, attempt to extract HTML content.
-        if let Ok(html) = resp.text().await {
-            // Parse the HTML document.
-            let document = scraper::Html::parse_document(&html);
+    let resp = match client.get(&url).send().await {
+        Ok(resp) => resp,
+        Err(err) => {
+            eprintln!("Unable to fetch webpage: {}", err);
+            return names;
+        }
+    };
 
-            // Extract JSON data from the HTML document and parse it.
-            if let Some(records_attr) = document
-                .select(&items_selector)
-                .next()
-                .and_then(|elem| elem.attr("records"))
-            {
-                // Parse the JSON data into a serde_json::Value.
-                if let Ok(json) = serde_json::from_str::<serde_json::Value>(records_attr) {
-                    // Check if the JSON data is an array.
-                    if let Some(json_array) = json.as_array() {
-                        // Iterate over JSON objects in the array.
-                        for json_obj in json_array {
-                            // Extract ID, slug, and title_eng from each JSON object.
-                            let mut id = String::new();
-                            let mut slug = String::new();
-                            let mut name = String::new();
+    // If the response is successful, attempt to extract HTML content.
+    let html = match resp.text().await {
+        Ok(html) => html,
+        Err(err) => {
+            eprintln!("Unable to get response value: {}", err);
+            return names;
+        }
+    };
 
-                            if let Some(id_value) = json_obj.get("id") {
-                                id = id_value.as_u64().unwrap().to_string();
-                            }
-                            if let Some(slug_value) = json_obj.get("slug") {
-                                slug = slug_value.as_str().unwrap().to_string();
-                            }
-                            if let Some(name_value) = json_obj.get("title_eng") {
-                                name = name_value.as_str().unwrap().to_string();
-                            }
+    // Parse the HTML document.
+    let document = scraper::Html::parse_document(&html);
 
-                            // Create a new Anime instance and add it to the vector.
-                            names.push(Anime::new(
-                                Sites::AnimeUnity,
-                                name,
-                                format!("/anime/{}-{}", id, slug),
-                            ));
-                        }
-                    }
-                }
+    // Extract JSON data from the HTML document and parse it.
+    let records_attr = match document
+        .select(&items_selector)
+        .next()
+        .and_then(|elem| elem.attr("records"))
+    {
+        Some(r) => r,
+        None => {
+            eprintln!("Unable to find any element that match");
+            return names;
+        }
+    };
+
+    // Parse the JSON data into a serde_json::Value.
+    let json = match serde_json::from_str::<serde_json::Value>(records_attr) {
+        Ok(json) => json,
+        Err(err) => {
+            eprintln!("Unable to parse json: {}", err);
+            return names;
+        }
+    };
+
+    // Check if the JSON data is an array.
+    let json_array = match json.as_array() {
+        Some(j) => j,
+        None => {
+            eprintln!("Not an array");
+            return names;
+        }
+    };
+
+    // Iterate over JSON objects in the array.
+    for json_obj in json_array {
+        // Extract ID, slug, and title_eng from each JSON object.
+        let mut id = String::new();
+        let mut slug = String::new();
+
+        let mut name = String::new();
+        let mut year = String::new();
+        let mut state = AnimeState::NonValido;
+        let mut description = String::new();
+        let mut genres = Vec::<String>::new();
+        let mut studio = String::new();
+        let mut stars = String::new();
+        let mut cover = String::new();
+        let mut cover_full = String::new();
+        let mut banner = String::new();
+
+        if let Some(id_value) = json_obj.get("id") {
+            id = id_value.as_u64().unwrap().to_string();
+        }
+        if let Some(slug_value) = json_obj.get("slug") {
+            slug = slug_value.as_str().unwrap().to_string();
+        }
+        if let Some(name_value) = json_obj.get("title_eng") {
+            name = name_value.as_str().unwrap().to_string();
+        }
+        if let Some(year_value) = json_obj.get("date") {
+            year = year_value.as_str().unwrap().to_string();
+        }
+        if let Some(state_value) = json_obj.get("status") {
+            state = match state_value.as_str().unwrap() {
+                "In Corso" => AnimeState::InCorso,
+                "Terminato" => AnimeState::Finito,
+                _ => AnimeState::NonValido,
+            };
+        }
+        if let Some(genres_value) = json_obj.get("genres") {
+            for genre in genres_value.as_array().unwrap() {
+                genres.push(genre.get("name").unwrap().as_str().unwrap().to_string());
             }
         }
+        if let Some(studio_value) = json_obj.get("studio") {
+            studio = studio_value.as_str().unwrap().to_string();
+        }
+        if let Some(stars_value) = json_obj.get("score") {
+            stars = stars_value.as_str().unwrap().to_string();
+        }
+        if let Some(description_value) = json_obj.get("plot") {
+            description = description_value.as_str().unwrap().to_string();
+        }
+        if let Some(cover_value) = json_obj.get("imageurl") {
+            cover = cover_value.as_str().unwrap().to_string();
+        }
+        if let Some(cover_full_value) = json_obj.get("cover") {
+            cover_full = cover_full_value.as_str().unwrap_or("").to_string();
+        }
+        if let Some(banner_value) = json_obj.get("imageurl_cover") {
+            banner = banner_value.as_str().unwrap_or("").to_string();
+        }
+
+        // Create a new Anime instance and add it to the vector.
+        names.push(Anime::new(
+            Sites::AnimeUnity,
+            format!("/anime/{}-{}", id, slug),
+            AnimeInfo::new(
+                name,
+                year,
+                state,
+                description,
+                genres,
+                studio,
+                stars,
+                cover,
+                cover_full,
+                banner,
+            ),
+        ));
     }
 
     // Return the vector containing Anime instances.
@@ -217,14 +301,14 @@ pub async fn get_anime_episodes(
 
 /// Asynchronously fetches video links for a range of anime episodes.
 ///
-/// This function takes a reference to a reqwest [`Client`], an [`AnimeEpisodes`] object containing
+/// This function takes a reference to a [`reqwest::Client`], an [`AnimeEpisodes`] object containing
 /// information about all episodes of the anime, and a range of episode indices. It filters episodes
 /// to retain only those within the specified range, fetches video links for each episode asynchronously,
 /// and returns a vector of [`Video`] objects containing the retrieved links.
 ///
 /// # Arguments
 ///
-/// * `client` - A reference to a reqwest [`Client`] used to make HTTP requests.
+/// * `client` - A reference to a [`reqwest::Client`] used to make HTTP requests.
 /// * `anime_episodes` - An [`AnimeEpisodes`] struct containing information about all episodes of the anime.
 /// * `range` - A range of episode indices (inclusive) for which to retrieve video links.
 ///
