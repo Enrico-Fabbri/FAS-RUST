@@ -3,7 +3,7 @@ name: Update Docs
 on:
     push:
         branches:
-            - docs # Adjust branch name as needed
+            - master # Adjust branch name as needed
 
 jobs:
     update_docs:
