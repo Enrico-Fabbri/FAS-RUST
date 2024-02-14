@@ -1,4 +1,5 @@
 use super::*;
+//use tauri_plugin_http::reqwest;
 
 /// The base URL for AnimeUnity site.
 const LINK: &str = "https://www.animeunity.to";

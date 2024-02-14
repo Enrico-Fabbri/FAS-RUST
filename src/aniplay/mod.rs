@@ -1,6 +1,5 @@
 use super::*;
-
-// TODO: finish this mod
+//use tauri_plugin_http::reqwest;
 
 const LINK: &str = "https://aniplay.co";
 
@@ -130,7 +129,7 @@ pub async fn search(client: &reqwest::Client, keywords: &str) -> Vec<Anime> {
             }
         }
         if let Some(stars_value) = json_obj.get("score") {
-            stars = stars_value.as_u64().unwrap().to_string();
+            stars = stars_value.as_f64().unwrap_or(std::f64::NAN).to_string();
         }
         if let Some(description_value) = json_obj.get("description") {
             description = description_value.as_str().unwrap().to_string();

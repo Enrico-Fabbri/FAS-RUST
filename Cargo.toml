@@ -3,11 +3,14 @@ name = "fas"
 version = "0.2.1"
 edition = "2021"
 
+[lib]
+path = "src/mod.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 tokio = {version = "1.36.0", features = ["full"]}
-reqwest = "0.11.24"
+reqwest = "0.11.24" #tauri-plugin-http = "2.0.0-beta.0"
 scraper = "0.18.1"
+serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.113"
 regex = "1.10.3"

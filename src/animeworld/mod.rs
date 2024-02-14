@@ -1,4 +1,5 @@
 use super::*;
+//use tauri_plugin_http::reqwest;
 
 /// The base URL for AnimeWorld site.
 const LINK: &str = "https://animeworld.so";
